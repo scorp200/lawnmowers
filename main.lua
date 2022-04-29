@@ -1,5 +1,5 @@
 function love.draw()
-  love.graphics.print('Hello World!')
+  love.graphics.print('Helxvex Computer Sucks')
 end
 
 function love.update(dt)
