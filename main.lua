@@ -68,7 +68,7 @@ function love.draw()
   for x = 1, width do
     for y = 1, height do
       local grass = grid[x][y].sprite
-      local dark = math.ldexp(grid[x][y].tall, 2)
+      local dark = 1 - math.ldexp(grid[x][y].tall, -5)
       love.graphics.setColor(dark, dark, dark)
       love.graphics.draw(spriteSheet, grass, (x - 1) * size, (y - 1) * size)
       love.graphics.print(string.format('%.2f', grid[x][y].tall), (x - 1) * size, (y - 1) * size)
