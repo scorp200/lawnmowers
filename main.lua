@@ -8,6 +8,7 @@ local mower = {x = 0, y = 0, r = 0, m = false}
 local targetMower = {x = 0, y = 0, r = 0}
 
 function love.load()
+  love.graphics.setDefaultFilter( "nearest", "nearest")
   spriteSheet = love.graphics.newImage('assets/sprite.png', nil)
 
   sprites['grass'] = love.graphics.newQuad(0, 0, size, size, spriteSheet:getDimensions())
@@ -19,27 +20,27 @@ end
 
 function love.keypressed(key)
   if key == "up" or key == "w" then
-    targetMower.y = mower.y - 1
-    mower.r = -halfpi
+    targetMower.y = targetMower.y - 1
+    targetMower.r = -halfpi
+    mower.m = false
   elseif key == "down" or key == "s" then
-    targetMower.y = mower.y + 1
-    mower.r = halfpi
+    targetMower.y = targetMower.y + 1
+    targetMower.r = halfpi
+    mower.m = false
   end
   
   if key == "left" or key == "a" then
-    targetMower.x = mower.x - 1
-    mower.m = true
-    mower.r = 0
+    targetMower.x = targetMower.x - 1
+    --mower.m = true
+    targetMower.r = math.pi
   elseif key == "right" or key == "d" then
-    targetMower.x = mower.x + 1
+    targetMower.x = targetMower.x + 1
     mower.m = false
-    mower.r = 0
+    targetMower.r = 0
   end
 end
 
 function love.draw()
-  local edge = size - 1
-
   for x = 1, width do
     for y = 1, height do
       love.graphics.draw(spriteSheet, sprites.grass, (x - 1) * size, (y - 1) * size)
@@ -47,12 +48,9 @@ function love.draw()
   end
 
   love.graphics.push()
-  love.graphics.translate( mower.x * size, mower.y * size)
+  love.graphics.translate( math.floor(mower.x * size), math.floor(mower.y * size))
 
-  local flip = 1
-  if mower.m then flip = -1 end
-
-  love.graphics.draw(spriteSheet, sprites.mower, size / 2, size / 2, mower.r, flip, 1, size / 2, size / 2 )
+  love.graphics.draw(spriteSheet, sprites.mower, size / 2, size / 2, mower.r, 1, 1, size / 2, size / 2 )
 
   love.graphics.pop()
 end
@@ -60,6 +58,7 @@ end
 function love.update(dt)
   mower.x = quad_in_out(targetMower.x, mower.x, dt * 100)
   mower.y = quad_in_out(targetMower.y, mower.y, dt * 100)
+  mower.r = quad_in_out(targetMower.r, mower.r, 0)
 end
 
 function lerp(a,b,t) return a * (1-t) + b * t end
