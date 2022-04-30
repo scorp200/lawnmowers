@@ -19,9 +19,12 @@ function love.load()
 
   sprites['grass'] = love.graphics.newQuad(0, 0, size, size, spriteSheet:getDimensions())
   sprites['grass_flowers'] = love.graphics.newQuad(size, 0, size, size, spriteSheet:getDimensions())
+  sprites['grass_dirt'] = love.graphics.newQuad(size * 2, 0, size, size, spriteSheet:getDimensions())
+  sprites['grass_dirt_skull'] = love.graphics.newQuad(0, size, size, size, spriteSheet:getDimensions())
+  sprites['grass_dying'] = love.graphics.newQuad(size, size, size, size, spriteSheet:getDimensions())
   sprites['mower'] = love.graphics.newQuad(size * 3, 0, size, size, spriteSheet:getDimensions())
 
-  local grassTypes = {sprites.grass, sprites.grass_flowers}
+  local grassTypes = {sprites.grass, sprites.grass_flowers, sprites.grass_dying, sprites.grass_dirt, sprites.grass_dirt_skull}
 
   width = math.floor(love.graphics.getWidth() / size)
   height = math.floor(love.graphics.getHeight() / size)
@@ -68,7 +71,7 @@ function love.draw()
   for x = 1, width do
     for y = 1, height do
       local grass = grid[x][y].sprite
-      local dark = 1 - math.ldexp(grid[x][y].tall, -5)
+      local dark = math.max(1 - math.ldexp(grid[x][y].tall, -7), .7)
       love.graphics.setColor(dark, dark, dark)
       love.graphics.draw(spriteSheet, grass, (x - 1) * size, (y - 1) * size)
       love.graphics.print(string.format('%.2f', grid[x][y].tall), (x - 1) * size, (y - 1) * size)
