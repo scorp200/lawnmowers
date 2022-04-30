@@ -17,7 +17,6 @@ function love.draw()
 
   for x = 1, width do
     for y = 1, height do
-      love.graphics.setColor(.2, .9, .3)
       love.graphics.draw(spriteSheet, sprites.grass, (x - 1) * size, (y - 1) * size)
     end
   end
