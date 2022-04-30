@@ -59,19 +59,15 @@ function love.draw()
 end
 
 function love.update(dt)
-  local easeDT = 1 - math.pow(dt, easeFunction)
+  local easeDT = 1 - easeFunction ^ (dt * 20)
   tempDT = easeDT
-  mower.x = quad_in_out(targetMower.x, mower.x, easeDT)
-  mower.y = quad_in_out(targetMower.y, mower.y, easeDT)
-  mower.r = quad_in_out(targetMower.r, mower.r, 0)
+  mower.x = lerp(mower.x, targetMower.x, easeInOut(easeDT))
+  mower.y = lerp(mower.y, targetMower.y, easeInOut(easeDT))
+  mower.r = targetMower.r --lerp(mower.r, targetMower.r, easeInOut(easeDT))
 end
 
-function lerp(a,b,t) return a * (1-t) + b * t end
-function quadin(a, b, t) return lerp(a, b, t * t) end
-function quad_in_out(a, b, t)
-  if t <= 0.5 then
-    return quadin(a, b, t*2) - (b-a)/2 -- scale by 2/0.5
-  else
-    return quadin(a, b, (1 - t)*2) + (b-a)/2 -- reverse and offset by 0.5
-  end
-end
+function lerp(a,b,t) return a + (b - a) * t end
+function easeIn(t) return t * t end
+function flip(x) return 1 - x end
+function easeOut(t) return flip(flip(t)^2) end
+function easeInOut(t) return lerp(easeIn(t), easeOut(t), t) end
