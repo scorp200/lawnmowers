@@ -3,13 +3,37 @@ local height = 30
 local size = 64
 local spriteSheet
 local sprites = {}
+local halfpi = math.pi / 2
+local mower = {x = 0, y = 0, r = 0, m = false}
+
 function love.load()
   spriteSheet = love.graphics.newImage('assets/sprite.png', nil)
 
-  sprites['grass'] = love.graphics.newQuad(0, 0, 64, 64, spriteSheet:getDimensions())
+  sprites['grass'] = love.graphics.newQuad(0, 0, size, size, spriteSheet:getDimensions())
+  sprites['mower'] = love.graphics.newQuad(size * 3, 0, size, size, spriteSheet:getDimensions())
 
   width = math.floor(love.graphics.getWidth() / size)
   height = math.floor(love.graphics.getHeight() / size)
+end
+
+function love.keypressed(key)
+  if key == "up" or key == "w" then
+    mower.y = mower.y - 1
+    mower.r = -halfpi
+  elseif key == "down" or key == "s" then
+    mower.y = mower.y + 1
+    mower.r = halfpi
+  end
+  
+  if key == "left" or key == "a" then
+    mower.x = mower.x - 1
+    mower.m = true
+    mower.r = 0
+  elseif key == "right" or key == "d" then
+    mower.x = mower.x + 1
+    mower.m = false
+    mower.r = 0
+  end
 end
 
 function love.draw()
@@ -20,6 +44,16 @@ function love.draw()
       love.graphics.draw(spriteSheet, sprites.grass, (x - 1) * size, (y - 1) * size)
     end
   end
+
+  love.graphics.push()
+  love.graphics.translate( mower.x * size, mower.y * size)
+
+  local flip = 1
+  if mower.m then flip = -1 end
+
+  love.graphics.draw(spriteSheet, sprites.mower, size / 2, size / 2, mower.r, flip, 1, size / 2, size / 2 )
+
+  love.graphics.pop()
 end
 
 function love.update(dt)
