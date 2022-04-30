@@ -14,6 +14,7 @@ function love.load()
   spriteSheet = love.graphics.newImage('assets/sprite.png', nil)
 
   sprites['grass'] = love.graphics.newQuad(0, 0, size, size, spriteSheet:getDimensions())
+  sprites['grass_flowers'] = love.graphics.newQuad(size, 0, size, size, spriteSheet:getDimensions())
   sprites['mower'] = love.graphics.newQuad(size * 3, 0, size, size, spriteSheet:getDimensions())
 
   width = math.floor(love.graphics.getWidth() / size)
@@ -45,7 +46,10 @@ end
 function love.draw()
   for x = 1, width do
     for y = 1, height do
-      love.graphics.draw(spriteSheet, sprites.grass, (x - 1) * size, (y - 1) * size)
+      local grass
+      if love.math.noise(x / 10, y / 10) > .6 then grass = sprites.grass_flowers
+      else grass = sprites.grass end
+      love.graphics.draw(spriteSheet, grass, (x - 1) * size, (y - 1) * size)
     end
   end
 
