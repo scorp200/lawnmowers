@@ -6,6 +6,8 @@ local sprites = {}
 local halfpi = math.pi / 2
 local mower = {x = 0, y = 0, r = 0, m = false}
 local targetMower = {x = 0, y = 0, r = 0}
+local tempDT = 0
+local easeFunction = .3
 
 function love.load()
   love.graphics.setDefaultFilter( "nearest", "nearest")
@@ -53,11 +55,14 @@ function love.draw()
   love.graphics.draw(spriteSheet, sprites.mower, size / 2, size / 2, mower.r, 1, 1, size / 2, size / 2 )
 
   love.graphics.pop()
+  love.graphics.print(tempDT)
 end
 
 function love.update(dt)
-  mower.x = quad_in_out(targetMower.x, mower.x, dt * 100)
-  mower.y = quad_in_out(targetMower.y, mower.y, dt * 100)
+  local easeDT = 1 - math.pow(dt, easeFunction)
+  tempDT = easeDT
+  mower.x = quad_in_out(targetMower.x, mower.x, easeDT)
+  mower.y = quad_in_out(targetMower.y, mower.y, easeDT)
   mower.r = quad_in_out(targetMower.r, mower.r, 0)
 end
 
