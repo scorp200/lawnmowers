@@ -5,6 +5,7 @@ local spriteSheet
 local sprites = {}
 local halfpi = math.pi / 2
 local mower = {x = 0, y = 0, r = 0, m = false}
+local targetMower = {x = 0, y = 0, r = 0}
 
 function love.load()
   spriteSheet = love.graphics.newImage('assets/sprite.png', nil)
@@ -18,19 +19,19 @@ end
 
 function love.keypressed(key)
   if key == "up" or key == "w" then
-    mower.y = mower.y - 1
+    targetMower.y = mower.y - 1
     mower.r = -halfpi
   elseif key == "down" or key == "s" then
-    mower.y = mower.y + 1
+    targetMower.y = mower.y + 1
     mower.r = halfpi
   end
   
   if key == "left" or key == "a" then
-    mower.x = mower.x - 1
+    targetMower.x = mower.x - 1
     mower.m = true
     mower.r = 0
   elseif key == "right" or key == "d" then
-    mower.x = mower.x + 1
+    targetMower.x = mower.x + 1
     mower.m = false
     mower.r = 0
   end
@@ -57,5 +58,16 @@ function love.draw()
 end
 
 function love.update(dt)
+  mower.x = quad_in_out(targetMower.x, mower.x, dt * 100)
+  mower.y = quad_in_out(targetMower.y, mower.y, dt * 100)
+end
 
+function lerp(a,b,t) return a * (1-t) + b * t end
+function quadin(a, b, t) return lerp(a, b, t * t) end
+function quad_in_out(a, b, t)
+  if t <= 0.5 then
+    return quadin(a, b, t*2) - (b-a)/2 -- scale by 2/0.5
+  else
+    return quadin(a, b, (1 - t)*2) + (b-a)/2 -- reverse and offset by 0.5
+  end
 end
