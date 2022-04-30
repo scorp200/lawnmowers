@@ -8,9 +8,12 @@ local mower = {x = 0, y = 0, r = 0, m = false}
 local targetMower = {x = 0, y = 0, r = 0}
 local tempDT = 0
 local easeFunction = .3
+local seed = 0
 
 function love.load()
   love.graphics.setDefaultFilter( "nearest", "nearest")
+  love.math.setRandomSeed(os.time() * 1000)
+  seed = love.math.random() * 1000
   spriteSheet = love.graphics.newImage('assets/sprite.png', nil)
 
   sprites['grass'] = love.graphics.newQuad(0, 0, size, size, spriteSheet:getDimensions())
@@ -47,7 +50,7 @@ function love.draw()
   for x = 1, width do
     for y = 1, height do
       local grass
-      if love.math.noise(x / 10, y / 10) > .6 then grass = sprites.grass_flowers
+      if love.math.noise(x / 10, y / 10, seed) > .6 then grass = sprites.grass_flowers
       else grass = sprites.grass end
       love.graphics.draw(spriteSheet, grass, (x - 1) * size, (y - 1) * size)
     end
@@ -59,7 +62,7 @@ function love.draw()
   love.graphics.draw(spriteSheet, sprites.mower, size / 2, size / 2, mower.r, 1, 1, size / 2, size / 2 )
 
   love.graphics.pop()
-  love.graphics.print(tempDT)
+  love.graphics.print(os.time())
 end
 
 function love.update(dt)
