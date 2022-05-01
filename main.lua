@@ -10,6 +10,7 @@ local tempDT = 0
 local easeFunction = .3
 local seed = 0
 local grid = {}
+local grassCollection = {totalWeight = 0, collection = {}}
 
 local mowePower = 100
 
@@ -24,6 +25,11 @@ function love.load()
   sprites['grass_dying'] = love.graphics.newQuad(size, size, size, size, spriteSheet:getDimensions())
   sprites['mower'] = love.graphics.newQuad(size * 3, 0, size, size, spriteSheet:getDimensions())
 
+  addToCollection(grassCollection, sprites.grass, 100)
+  addToCollection(grassCollection, sprites.grass_flowers, 100)
+  addToCollection(grassCollection, sprites.grass_dying, 60)
+  addToCollection(grassCollection, sprites.grass_dirt, 3)
+  addToCollection(grassCollection, sprites.grass_dirt_skull, 1)
   local grassTypes = {sprites.grass, sprites.grass_flowers, sprites.grass_dying, sprites.grass_dirt, sprites.grass_dirt_skull}
 
   width = math.floor(love.graphics.getWidth() / size)
@@ -32,11 +38,10 @@ function love.load()
   for x = 1, width do
     grid[x] = {}
     for y = 1, height do
-      local index = love.math.random(#grassTypes)
       grid[x][y] = {
         tall = love.math.random(5, 10),
         age = 0,
-        sprite = grassTypes[index]
+        sprite = getRandomLoot(grassCollection)
       }
     end
   end
@@ -110,3 +115,16 @@ function flip(x) return 1 - x end
 function easeOut(t) return flip(flip(t)^2) end
 function easeInOut(t) return lerp(easeIn(t), easeOut(t), t) end
 function clamp(a, min, max) return math.max(min, math.min(a, max)) end
+
+function addToCollection(t, item, weight)
+  t.totalWeight = t.totalWeight + weight
+  table.insert(t.collection, {item = item, accumulatedWeight = t.totalWeight})
+end
+
+function getRandomLoot(t)
+  local r = love.math.random(t.totalWeight)
+  for x = 1, #t.collection do
+    if t.collection[x].accumulatedWeight >= r then return t.collection[x].item end
+  end
+  return nil
+end
