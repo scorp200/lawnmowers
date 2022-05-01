@@ -11,6 +11,8 @@ local easeFunction = .3
 local seed = 0
 local grid = {}
 local grassCollection = {totalWeight = 0, collection = {}}
+local keyDelay = .1
+local keyTime = keyDelay
 
 local mowePower = 100
 
@@ -48,28 +50,6 @@ function love.load()
 end
 
 function love.keypressed(key)
-  if key == "up" or key == "w" then
-    targetMower.y = targetMower.y - 1
-    targetMower.r = -halfpi
-    mower.m = false
-  elseif key == "down" or key == "s" then
-    targetMower.y = targetMower.y + 1
-    targetMower.r = halfpi
-    mower.m = false
-  end
-  
-  if key == "left" or key == "a" then
-    targetMower.x = targetMower.x - 1
-    --mower.m = true
-    targetMower.r = math.pi
-  elseif key == "right" or key == "d" then
-    targetMower.x = targetMower.x + 1
-    mower.m = false
-    targetMower.r = 0
-  end
-
-  targetMower.x = clamp(targetMower.x, 0, width - 1)
-  targetMower.y = clamp(targetMower.y, 0, height - 1)
 end
 
 function love.draw()
@@ -94,6 +74,34 @@ function love.draw()
 end
 
 function love.update(dt)
+  keyTime = keyTime + dt
+
+  if grid[targetMower.x + 1][targetMower.y + 1].tall == 0 and keyTime >= keyDelay then
+    keyTime = 0
+    if love.keyboard.isDown("up","w") then
+      targetMower.y = targetMower.y - 1
+      targetMower.r = -halfpi
+      mower.m = false
+    elseif love.keyboard.isDown("down", "s") then
+      targetMower.y = targetMower.y + 1
+      targetMower.r = halfpi
+      mower.m = false
+    end
+    
+    if love.keyboard.isDown("left", "a") then
+      targetMower.x = targetMower.x - 1
+      --mower.m = true
+      targetMower.r = math.pi
+    elseif love.keyboard.isDown("right", "d") then
+      targetMower.x = targetMower.x + 1
+      mower.m = false
+      targetMower.r = 0
+    end
+  end
+
+  targetMower.x = clamp(targetMower.x, 0, width - 1)
+  targetMower.y = clamp(targetMower.y, 0, height - 1)
+
   local easeDT = 1 - easeFunction ^ (dt * 20)
   mower.x = lerp(mower.x, targetMower.x, easeInOut(easeDT))
   mower.y = lerp(mower.y, targetMower.y, easeInOut(easeDT))
