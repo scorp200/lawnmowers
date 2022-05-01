@@ -18,6 +18,9 @@ local keyTime = keyDelay
 local mowePower = 100
 local growFactor = .01
 
+local offsetX
+local offsetY
+
 function love.load()
   love.graphics.setDefaultFilter( "nearest", "nearest")
   spriteSheet = love.graphics.newImage('assets/sprite.png', nil)
@@ -29,6 +32,9 @@ function love.load()
   sprites['grass_dying'] = love.graphics.newQuad(size, size, size, size, spriteSheet:getDimensions())
   sprites['grass_grassy'] = love.graphics.newQuad(size * 2, size, size, size, spriteSheet:getDimensions())
   sprites['mower'] = love.graphics.newQuad(size * 3, 0, size, size, spriteSheet:getDimensions())
+  sprites['fence_front'] = love.graphics.newQuad(size * 7, size, size, size, spriteSheet:getDimensions())
+  sprites['fence_right'] = love.graphics.newQuad(size * 8, size, size, size, spriteSheet:getDimensions())
+  sprites['fence_left'] = love.graphics.newQuad(size * 9, size, size, size, spriteSheet:getDimensions())
 
   addToCollection(grassCollection, sprites.grass, 100)
   addToCollection(grassCollection, sprites.grass_flowers, 100)
@@ -36,18 +42,34 @@ function love.load()
   addToCollection(grassCollection, sprites.grass_dying, 60)
   addToCollection(grassCollection, sprites.grass_dirt, 3)
   addToCollection(grassCollection, sprites.grass_dirt_skull, 1)
-  local grassTypes = {sprites.grass, sprites.grass_flowers, sprites.grass_dying, sprites.grass_dirt, sprites.grass_dirt_skull}
 
   width = math.floor(love.graphics.getWidth() / size)
   height = math.floor(love.graphics.getHeight() / size)
 
-  for x = 1, width do
+  offsetX = love.graphics.getWidth() / 2 - (width * size) / 2
+  offsetY = love.graphics.getHeight() / 2 - (height * size) / 2
+
+  mower.x =  math.floor(width / 2)
+  targetMower.x = mower.x
+  queMower.x = mower.x
+  mower.y =  math.floor(height / 2)
+  targetMower.y = mower.y
+  queMower.y = mower.y
+
+  for x = 0, width + 1 do
     grid[x] = {}
-    for y = 1, height do
+    for y = 0, height + 1 do
+      local fence = nil
+
+      if y == 1 and x > 0 and x <= width then fence = sprites.fence_front
+      elseif x == 1 and y > 1 and y < width then fence = sprites.fence_left
+      elseif x == width and y > 1 and y < width then fence = sprites.fence_right end
+
       grid[x][y] = {
         tall = love.math.random(5, 10),
         age = 0,
-        sprite = getRandomLoot(grassCollection)
+        sprite = getRandomLoot(grassCollection),
+        fence = fence
       }
     end
   end
@@ -58,16 +80,23 @@ function love.keypressed(key)
 end
 
 function love.draw()
-  for x = 1, width do
-    for y = 1, height do
+  love.graphics.push()
+  love.graphics.translate(offsetX, offsetY)
+
+  for x = 0, width + 1 do
+    for y = 0, height + 1 do
       local grass = grid[x][y].sprite
       local dark = math.max(1 - math.ldexp(grid[x][y].tall, -7), .7)
       love.graphics.setColor(dark, dark, dark)
       love.graphics.draw(spriteSheet, grass, (x - 1) * size, (y - 1) * size)
       love.graphics.print(string.format('%.2f', grid[x][y].tall), (x - 1) * size, (y - 1) * size)
+      
+      if grid[x][y].fence ~= nil then 
+        love.graphics.draw(spriteSheet, grid[x][y].fence, (x - 1) * size, (y - 1) * size)
+      end
     end
 
-    love.graphics.reset()
+    love.graphics.setColor(1, 1, 1)
   end
 
   love.graphics.push()
@@ -75,6 +104,7 @@ function love.draw()
 
   love.graphics.draw(spriteSheet, sprites.mower, size / 2, size / 2, mower.r, 1, 1, size / 2, size / 2 )
 
+  love.graphics.pop()
   love.graphics.pop()
 end
 
@@ -118,7 +148,7 @@ function love.update(dt)
 
   for x = 1, width do
     for y = 1, height do
-      if targetMower.x + 1 ~= x or targetMower.y + 1 ~= y then grid[x][y].tall = grid[x][y].tall + (grid[x][y].age * growFactor) * dt end
+      if (targetMower.x + 1 ~= x or targetMower.y + 1 ~= y) and grid[x][y].fence ~= sprites.fence_front then grid[x][y].tall = grid[x][y].tall + (grid[x][y].age * growFactor) * dt end
       grid[x][y].age = grid[x][y].age + dt
     end
   end
@@ -129,7 +159,7 @@ end
 function canMove(x, y)
   if x < 0 or
     x > width or
-    y < 0 or
+    y < 1 or
     y > height then
       return false
     end
