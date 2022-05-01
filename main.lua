@@ -4,8 +4,11 @@ local size = 64
 local spriteSheet
 local sprites = {}
 local halfpi = math.pi / 2
+
 local mower = {x = 0, y = 0, r = 0, m = false}
+local queMower = {x = 0, y = 0, r = 0}
 local targetMower = {x = 0, y = 0, r = 0}
+
 local tempDT = 0
 local easeFunction = .3
 local seed = 0
@@ -25,10 +28,12 @@ function love.load()
   sprites['grass_dirt'] = love.graphics.newQuad(size * 2, 0, size, size, spriteSheet:getDimensions())
   sprites['grass_dirt_skull'] = love.graphics.newQuad(0, size, size, size, spriteSheet:getDimensions())
   sprites['grass_dying'] = love.graphics.newQuad(size, size, size, size, spriteSheet:getDimensions())
+  sprites['grass_grassy'] = love.graphics.newQuad(size * 2, size, size, size, spriteSheet:getDimensions())
   sprites['mower'] = love.graphics.newQuad(size * 3, 0, size, size, spriteSheet:getDimensions())
 
   addToCollection(grassCollection, sprites.grass, 100)
   addToCollection(grassCollection, sprites.grass_flowers, 100)
+  addToCollection(grassCollection, sprites.grass_grassy, 90)
   addToCollection(grassCollection, sprites.grass_dying, 60)
   addToCollection(grassCollection, sprites.grass_dirt, 3)
   addToCollection(grassCollection, sprites.grass_dirt_skull, 1)
@@ -50,6 +55,7 @@ function love.load()
 end
 
 function love.keypressed(key)
+  if key == 'escape' then love.event.quit() end
 end
 
 function love.draw()
@@ -61,7 +67,7 @@ function love.draw()
       love.graphics.draw(spriteSheet, grass, (x - 1) * size, (y - 1) * size)
       love.graphics.print(string.format('%.2f', grid[x][y].tall), (x - 1) * size, (y - 1) * size)
     end
-    
+
     love.graphics.reset()
   end
 
@@ -76,27 +82,31 @@ end
 function love.update(dt)
   keyTime = keyTime + dt
 
+  if love.keyboard.isDown("up", "w") and canMove(targetMower.x, targetMower.y - 1) then
+    queMower.x = targetMower.x
+    queMower.y = targetMower.y - 1
+    queMower.r = -halfpi
+  elseif love.keyboard.isDown("down", "s") and canMove(targetMower.x, targetMower.y + 1) then
+    queMower.x = targetMower.x
+    queMower.y = targetMower.y + 1
+    queMower.r = halfpi
+  end
+
+  if love.keyboard.isDown("left", "a") and canMove(targetMower.x - 1, targetMower.y) then
+    queMower.x = targetMower.x - 1
+    queMower.y = targetMower.y
+    queMower.r = math.pi
+  elseif love.keyboard.isDown("right", "d") and canMove(targetMower.x + 1, targetMower.y) then
+    queMower.x = targetMower.x + 1
+    queMower.y = targetMower.y
+    queMower.r = 0
+  end
+
   if grid[targetMower.x + 1][targetMower.y + 1].tall == 0 and keyTime >= keyDelay then
     keyTime = 0
-    if love.keyboard.isDown("up","w") then
-      targetMower.y = targetMower.y - 1
-      targetMower.r = -halfpi
-      mower.m = false
-    elseif love.keyboard.isDown("down", "s") then
-      targetMower.y = targetMower.y + 1
-      targetMower.r = halfpi
-      mower.m = false
-    end
-    
-    if love.keyboard.isDown("left", "a") then
-      targetMower.x = targetMower.x - 1
-      --mower.m = true
-      targetMower.r = math.pi
-    elseif love.keyboard.isDown("right", "d") then
-      targetMower.x = targetMower.x + 1
-      mower.m = false
-      targetMower.r = 0
-    end
+    targetMower.x = queMower.x
+    targetMower.y = queMower.y
+    targetMower.r = queMower.r
   end
 
   targetMower.x = clamp(targetMower.x, 0, width - 1)
@@ -109,12 +119,22 @@ function love.update(dt)
 
   for x = 1, width do
     for y = 1, height do
-      grid[x][y].tall = grid[x][y].tall + (grid[x][y].age / 100) * dt
+      if targetMower.x + 1 ~= x or targetMower.y + 1 ~= y then grid[x][y].tall = grid[x][y].tall + (grid[x][y].age / 100) * dt end
       grid[x][y].age = grid[x][y].age + dt
     end
   end
 
   grid[targetMower.x + 1][targetMower.y + 1].tall = math.max(grid[targetMower.x + 1][targetMower.y + 1].tall - mowePower * dt, 0)
+end
+
+function canMove(x, y)
+  if x < 0 or
+    x > width or
+    y < 0 or
+    y > height then
+      return false
+    end
+  return true
 end
 
 function lerp(a,b,t) return a + (b - a) * t end
