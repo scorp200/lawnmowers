@@ -13,11 +13,12 @@ local mowerDir = {x = 0, y = 0, r = 0}
 local easeFunction = .3
 local grid = {}
 local grassCollection = {totalWeight = 0, collection = {}}
-local keyDelay = .1
+local keyDelay = .17
 local keyTime = keyDelay
 
 local mowePower = 100
 local growFactor = .01
+local tooTall = 250
 
 local offsetX
 local offsetY
@@ -61,30 +62,7 @@ function love.load()
   offsetX = love.graphics.getWidth() / 2 - (width * size) / 2
   offsetY = love.graphics.getHeight() / 2 - (height * size) / 2
 
-  mower.x =  math.floor(width / 2)
-  targetMower.x = mower.x
-  queMower.x = mower.x
-  mower.y =  math.floor(height / 2)
-  targetMower.y = mower.y
-  queMower.y = mower.y
-
-  for x = 0, width + 1 do
-    grid[x] = {}
-    for y = 0, height + 1 do
-      local fence = nil
-
-      if y == 1 and x > 0 and x <= width then fence = sprites.fence_front
-      elseif x == 1 and y > 1 and y < width then fence = sprites.fence_left
-      elseif x == width and y > 1 and y < width then fence = sprites.fence_right end
-
-      grid[x][y] = {
-        tall = love.math.random(5, 10),
-        age = 0,
-        sprite = getRandomLoot(grassCollection),
-        fence = fence
-      }
-    end
-  end
+  reset()
 end
 
 function love.keypressed(key)
@@ -107,6 +85,11 @@ function love.keypressed(key)
     mowerDir.x = 1
     mowerDir.y = 0
     mowerDir.r = 0
+  end
+  
+  if keyTime > keyDelay * 2 and gameOver then
+    gameOver = false
+    reset()
   end
 end
 
@@ -153,6 +136,10 @@ end
 function love.update(dt)
   keyTime = keyTime + dt
 
+  if gameOver then
+    return
+  end
+
   --if love.keyboard.isDown("up", "w") and canMove(targetMower.x, targetMower.y - 1) then
   --  queMower.x = targetMower.x
   --  queMower.y = targetMower.y - 1
@@ -188,7 +175,10 @@ function love.update(dt)
     targetMower.x = targetMower.x + mowerDir.x
     targetMower.y = targetMower.y + mowerDir.y
     targetMower.r = mowerDir.r
-    if mowerDir.x ~= 0 or mowerDir.y ~= 0 then love.audio.play(mow) end
+    if mowerDir.x ~= 0 or mowerDir.y ~= 0 then
+      mow:stop()
+      love.audio.play(mow)
+    end
   end
 
   local easeDT = 1 - easeFunction ^ (dt * 20)
@@ -200,6 +190,13 @@ function love.update(dt)
     for y = 1, height do
       if (targetMower.x + 1 ~= x or targetMower.y + 1 ~= y) and grid[x][y].fence ~= sprites.fence_front then grid[x][y].tall = grid[x][y].tall + (grid[x][y].age * growFactor) * dt end
       grid[x][y].age = grid[x][y].age + dt
+      
+      if grid[x][y].tall > tooTall then
+        mowerDir.x = 0
+        mowerDir.y = 0
+        gameOver = true
+        keyTime = 0
+      end
     end
   end
 
@@ -214,6 +211,33 @@ function canMove(x, y)
       return false
     end
   return true
+end
+
+function reset()
+  mower.x =  math.floor(width / 2)
+  targetMower.x = mower.x
+  queMower.x = mower.x
+  mower.y =  math.floor(height / 2)
+  targetMower.y = mower.y
+  queMower.y = mower.y
+
+  for x = 0, width + 1 do
+    grid[x] = {}
+    for y = 0, height + 1 do
+      local fence = nil
+
+      if y == 1 and x > 0 and x <= width then fence = sprites.fence_front
+      elseif x == 1 and y > 1 and y < width then fence = sprites.fence_left
+      elseif x == width and y > 1 and y < width then fence = sprites.fence_right end
+
+      grid[x][y] = {
+        tall = love.math.random(5, 10),
+        age = 0,
+        sprite = getRandomLoot(grassCollection),
+        fence = fence
+      }
+    end
+  end
 end
 
 function lerp(a,b,t) return a + (b - a) * t end
