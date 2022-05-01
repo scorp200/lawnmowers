@@ -8,6 +8,7 @@ local halfpi = math.pi / 2
 local mower = {x = 0, y = 0, r = 0, m = false}
 local queMower = {x = 0, y = 0, r = 0}
 local targetMower = {x = 0, y = 0, r = 0}
+local mowerDir = {x = 0, y = 0, r = 0}
 
 local easeFunction = .3
 local grid = {}
@@ -21,7 +22,12 @@ local growFactor = .01
 local offsetX
 local offsetY
 
+local gameOver = false
+
+local mow
+
 function love.load()
+  love.window.setTitle('Garden Mowers')
   love.graphics.setDefaultFilter( "nearest", "nearest")
   spriteSheet = love.graphics.newImage('assets/sprite.png', nil)
 
@@ -36,12 +42,18 @@ function love.load()
   sprites['fence_right'] = love.graphics.newQuad(size * 8, size, size, size, spriteSheet:getDimensions())
   sprites['fence_left'] = love.graphics.newQuad(size * 9, size, size, size, spriteSheet:getDimensions())
 
+  sprites['title'] = love.graphics.newQuad(441, 128, 649, 294, spriteSheet:getDimensions())
+  sprites['hoa'] = love.graphics.newQuad(0, 128, 385, 480, spriteSheet:getDimensions())
+
   addToCollection(grassCollection, sprites.grass, 100)
   addToCollection(grassCollection, sprites.grass_flowers, 100)
   addToCollection(grassCollection, sprites.grass_grassy, 90)
   addToCollection(grassCollection, sprites.grass_dying, 60)
   addToCollection(grassCollection, sprites.grass_dirt, 3)
   addToCollection(grassCollection, sprites.grass_dirt_skull, 1)
+
+  mow = love.audio.newSource('assets/mow.wav', 'static')
+  mow:setVolume(.5)
 
   width = math.floor(love.graphics.getWidth() / size)
   height = math.floor(love.graphics.getHeight() / size)
@@ -77,6 +89,25 @@ end
 
 function love.keypressed(key)
   if key == 'escape' then love.event.quit() end
+  if key == 'w' or key == 'up' then
+    mowerDir.y = -1
+    mowerDir.x = 0
+    mowerDir.r = -halfpi
+  elseif key == 's' or key == 'down' then
+    mowerDir.y = 1
+    mowerDir.x = 0
+    mowerDir.r = halfpi
+  end
+
+  if key == 'a' or key == 'left' then
+    mowerDir.x = -1
+    mowerDir.y = 0
+    mowerDir.r = math.pi
+  elseif key == 'd' or key == 'right' then
+    mowerDir.x = 1
+    mowerDir.y = 0
+    mowerDir.r = 0
+  end
 end
 
 function love.draw()
@@ -105,41 +136,60 @@ function love.draw()
   love.graphics.draw(spriteSheet, sprites.mower, size / 2, size / 2, mower.r, 1, 1, size / 2, size / 2 )
 
   love.graphics.pop()
+
+  if mowerDir.x == 0 and mowerDir.y == 0 then
+    local x, y, w, h = sprites.title:getViewport()
+    love.graphics.draw(spriteSheet, sprites.title, width * size / 2 - w / 2, 100)
+  end
+  
+  if gameOver then
+    local x, y, w, h = sprites.hoa:getViewport()
+    love.graphics.draw(spriteSheet, sprites.hoa, width * size / 2 - w / 2, 100)
+  end
+
   love.graphics.pop()
 end
 
 function love.update(dt)
   keyTime = keyTime + dt
 
-  if love.keyboard.isDown("up", "w") and canMove(targetMower.x, targetMower.y - 1) then
-    queMower.x = targetMower.x
-    queMower.y = targetMower.y - 1
-    queMower.r = -halfpi
-  elseif love.keyboard.isDown("down", "s") and canMove(targetMower.x, targetMower.y + 1) then
-    queMower.x = targetMower.x
-    queMower.y = targetMower.y + 1
-    queMower.r = halfpi
-  end
+  --if love.keyboard.isDown("up", "w") and canMove(targetMower.x, targetMower.y - 1) then
+  --  queMower.x = targetMower.x
+  --  queMower.y = targetMower.y - 1
+  --  queMower.r = -halfpi
+  --elseif love.keyboard.isDown("down", "s") and canMove(targetMower.x, targetMower.y + 1) then
+  --  queMower.x = targetMower.x
+  --  queMower.y = targetMower.y + 1
+  --  queMower.r = halfpi
+  --end
 
-  if love.keyboard.isDown("left", "a") and canMove(targetMower.x - 1, targetMower.y) then
-    queMower.x = targetMower.x - 1
-    queMower.y = targetMower.y
-    queMower.r = math.pi
-  elseif love.keyboard.isDown("right", "d") and canMove(targetMower.x + 1, targetMower.y) then
-    queMower.x = targetMower.x + 1
-    queMower.y = targetMower.y
-    queMower.r = 0
-  end
+  --if love.keyboard.isDown("left", "a") and canMove(targetMower.x - 1, targetMower.y) then
+  --  queMower.x = targetMower.x - 1
+  --  queMower.y = targetMower.y
+  --  queMower.r = math.pi
+  --elseif love.keyboard.isDown("right", "d") and canMove(targetMower.x + 1, targetMower.y) then
+  --  queMower.x = targetMower.x + 1
+  --  queMower.y = targetMower.y
+  --  queMower.r = 0
+  --end
 
-  if grid[targetMower.x + 1][targetMower.y + 1].tall == 0 and keyTime >= keyDelay then
+  --if grid[targetMower.x + 1][targetMower.y + 1].tall == 0 and keyTime >= keyDelay then
+  --  keyTime = 0
+  --  targetMower.x = queMower.x
+  --  targetMower.y = queMower.y
+  --  targetMower.r = queMower.r
+  --end
+
+  --targetMower.x = clamp(targetMower.x, 0, width - 1)
+  --targetMower.y = clamp(targetMower.y, 0, height - 1)
+
+  if canMove(targetMower.x + mowerDir.x, targetMower.y + mowerDir.y) and grid[targetMower.x + 1][targetMower.y + 1].tall == 0 and keyTime >= keyDelay then
     keyTime = 0
-    targetMower.x = queMower.x
-    targetMower.y = queMower.y
-    targetMower.r = queMower.r
+    targetMower.x = targetMower.x + mowerDir.x
+    targetMower.y = targetMower.y + mowerDir.y
+    targetMower.r = mowerDir.r
+    if mowerDir.x ~= 0 or mowerDir.y ~= 0 then love.audio.play(mow) end
   end
-
-  targetMower.x = clamp(targetMower.x, 0, width - 1)
-  targetMower.y = clamp(targetMower.y, 0, height - 1)
 
   local easeDT = 1 - easeFunction ^ (dt * 20)
   mower.x = lerp(mower.x, targetMower.x, easeInOut(easeDT))
@@ -158,9 +208,9 @@ end
 
 function canMove(x, y)
   if x < 0 or
-    x > width or
+    x > width - 1 or
     y < 1 or
-    y > height then
+    y > height - 1 then
       return false
     end
   return true
