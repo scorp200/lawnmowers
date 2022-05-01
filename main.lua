@@ -9,15 +9,14 @@ local mower = {x = 0, y = 0, r = 0, m = false}
 local queMower = {x = 0, y = 0, r = 0}
 local targetMower = {x = 0, y = 0, r = 0}
 
-local tempDT = 0
 local easeFunction = .3
-local seed = 0
 local grid = {}
 local grassCollection = {totalWeight = 0, collection = {}}
 local keyDelay = .1
 local keyTime = keyDelay
 
 local mowePower = 100
+local growFactor = .01
 
 function love.load()
   love.graphics.setDefaultFilter( "nearest", "nearest")
@@ -119,7 +118,7 @@ function love.update(dt)
 
   for x = 1, width do
     for y = 1, height do
-      if targetMower.x + 1 ~= x or targetMower.y + 1 ~= y then grid[x][y].tall = grid[x][y].tall + (grid[x][y].age / 100) * dt end
+      if targetMower.x + 1 ~= x or targetMower.y + 1 ~= y then grid[x][y].tall = grid[x][y].tall + (grid[x][y].age * growFactor) * dt end
       grid[x][y].age = grid[x][y].age + dt
     end
   end
