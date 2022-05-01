@@ -103,7 +103,7 @@ function love.draw()
       local dark = math.max(1 - math.ldexp(grid[x][y].tall, -7), .7)
       love.graphics.setColor(dark, dark, dark)
       love.graphics.draw(spriteSheet, grass, (x - 1) * size, (y - 1) * size)
-      love.graphics.print(string.format('%.2f', grid[x][y].tall), (x - 1) * size, (y - 1) * size)
+      --love.graphics.print(string.format('%.2f', grid[x][y].tall), (x - 1) * size, (y - 1) * size)
       
       if grid[x][y].fence ~= nil then 
         love.graphics.draw(spriteSheet, grid[x][y].fence, (x - 1) * size, (y - 1) * size)
